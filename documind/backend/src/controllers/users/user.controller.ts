@@ -41,7 +41,24 @@ export const createUser = async (req: Request, res: Response) => {
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
-  } catch (error) {}
+    const {email, password } = req.body;
+    const user = await User.findOne({email: email});
+    if(!user){
+        return res.status(404).json({message: 'User not Found.'})
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if(!isPasswordValid){
+        return res.status(400).json({message: 'Invalid Credentials.'});
+    }
+    const token = jwt.sign(
+        {id: user._id}, process.env.JWT_SECRET as string,
+        {expiresIn: '1h'}
+    )
+    return res.status(200).json({message: "User logged in Successfully.", token: token});
+  } catch (error) {
+    console.error("Error logging in user:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
 };
 
 export const getUsers = async (req: Request, res: Response) => {
